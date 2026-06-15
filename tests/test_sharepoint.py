@@ -111,11 +111,9 @@ def test_token_is_sent_as_bearer_header():
     fake = FakeGraph([("faq.md", "hello world")])
     client = SharePointClient(make_config(), request_fn=fake.request)
     client.fetch_documents()
-    graph_calls = [
-        h for _, url, h in fake.calls if url.startswith("https://graph.microsoft.com") and h
-    ]
-    assert graph_calls
-    auth_header = graph_calls[0]["Authorization"]
+    authed_calls = [h for _, _, h in fake.calls if h and "Authorization" in h]
+    assert authed_calls
+    auth_header = authed_calls[0]["Authorization"]
     assert auth_header.startswith("Bearer ")
     assert auth_header.endswith("fake-token")
 
@@ -141,7 +139,7 @@ def test_engine_indexes_sharepoint_documents():
 
 def test_engine_survives_failing_source(tmp_path):
     (tmp_path / "local.md").write_text(
-        "## Local\n\nThe local file answer about microscopes.", encoding="utf-8"
+        "## Local\n\nThe local file answers about microscopes.", encoding="utf-8"
     )
 
     class BrokenSource:

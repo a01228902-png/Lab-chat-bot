@@ -113,7 +113,11 @@ class SharePointClient:
 
     # -- public API -------------------------------------------------------
     def fetch_documents(self) -> List[SharePointDocument]:
-        """Return ``(name, content)`` for every supported file in the library."""
+        """Return ``(name, content)`` for every supported file in the library.
+
+        Only ``.md`` / ``.txt`` style files are returned. Individual files whose
+        download fails are skipped so one bad file never blocks the rest.
+        """
         token = self._get_token()
         site_id = self._get_site_id(token)
         items = self._list_items(token, site_id)
