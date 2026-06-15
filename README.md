@@ -57,6 +57,41 @@ folder of reference files:
 PORT=8080 REFERENCE_DIR=/path/to/docs python app.py
 ```
 
+## Deploying online
+
+The development server above is fine for trying things out, but for a real
+"online" deployment that other people can reach, run the app with a production
+WSGI server. The app already exposes a WSGI entry point as `app:app`, and a
+[`Procfile`](Procfile) is included so most hosting platforms work out of the box.
+
+**Run a production server yourself** (any always-on Linux server / VM):
+
+```bash
+pip install -r requirements.txt gunicorn
+gunicorn app:app --bind 0.0.0.0:8000
+# the chat UI is now at http://<your-server>:8000
+```
+
+Put it behind a reverse proxy (e.g. Nginx) or your organisation's load balancer
+to add HTTPS and a friendly URL.
+
+**Deploy to a hosting platform** (Render, Railway, Heroku, Azure App Service,
+Google Cloud Run, etc.):
+
+1. Push this repository to GitHub (already done for this PR).
+2. Create a new **web service** on your platform of choice and point it at the
+   repo. The bundled `Procfile`
+   (`web: gunicorn app:app --bind 0.0.0.0:$PORT`) tells the platform how to
+   start the app; the platform supplies the `PORT`.
+3. In the platform's **environment variables / secrets** settings, add the same
+   `SHAREPOINT_*` values from [`.env.example`](.env.example) (don't upload your
+   `.env` file). Leave them unset to run from the local `reference/` files.
+4. Deploy. Open the URL the platform gives you and visit `/api/health` to
+   confirm it is up and which `knowledge_source` is active.
+
+> Most platforms install `gunicorn` automatically when it is listed in your
+> dependencies. If yours does not, add `gunicorn` to `requirements.txt`.
+
 ## Storing the knowledge in SharePoint (optional)
 
 You can keep the documents the bot answers from in a SharePoint document
