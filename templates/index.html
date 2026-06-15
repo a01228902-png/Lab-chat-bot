@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Chat Bot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="chat-container">
+    <header class="chat-header">
+      <h1>Lab Chat Bot</h1>
+      <p>Ask a basic question about the lab and I'll answer from the reference files.</p>
+    </header>
+
+    <section id="messages" class="messages" aria-live="polite">
+      <div class="message bot">
+        Hi! Ask me something like <em>"What are the lab hours?"</em> or
+        <em>"What is the tumor microenvironment?"</em>
+      </div>
+    </section>
+
+    <form id="chat-form" class="chat-form" autocomplete="off">
+      <input id="user-input" type="text" name="message"
+             placeholder="Type your question..." aria-label="Your question" required>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
