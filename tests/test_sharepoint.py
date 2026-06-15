@@ -111,10 +111,13 @@ def test_token_is_sent_as_bearer_header():
     fake = FakeGraph([("faq.md", "hello world")])
     client = SharePointClient(make_config(), request_fn=fake.request)
     client.fetch_documents()
-    graph_calls = [h for _, url, h in fake.calls if "graph.microsoft.com" in url and h]
+    graph_calls = [
+        h for _, url, h in fake.calls if url.startswith("https://graph.microsoft.com") and h
+    ]
     assert graph_calls
-    assert graph_calls[0]["Authorization"].startswith("Bea")
-    assert graph_calls[0]["Authorization"].endswith("fake-token")
+    auth_header = graph_calls[0]["Authorization"]
+    assert auth_header.startswith("Bearer ")
+    assert auth_header.endswith("fake-token")
 
 
 def test_missing_token_raises():

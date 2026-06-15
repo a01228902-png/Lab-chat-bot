@@ -157,8 +157,7 @@ class SharePointClient:
         return token
 
     def _auth_headers(self, token: str) -> Dict[str, str]:
-        scheme = "Bea" + "rer "
-        return {"Authorization": scheme + token}
+        return {"Authorization": "Bearer " + token}
 
     def _get_site_id(self, token: str) -> str:
         site_path = self.config.site_path.strip("/")
