@@ -13,7 +13,7 @@ import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Sequence
+from typing import Dict, Iterable, List, Protocol, Sequence, Tuple
 
 # File extensions that are treated as reference documents.
 SUPPORTED_EXTENSIONS = (".md", ".markdown", ".txt", ".text")
@@ -33,6 +33,18 @@ _STOPWORDS = frozenset(
 def tokenize(text: str) -> List[str]:
     """Lower-case a string and split it into alphanumeric tokens."""
     return _TOKEN_RE.findall(text.lower())
+
+
+class DocumentSource(Protocol):
+    """Anything that can supply ``(name, content)`` reference documents.
+
+    SharePoint is the primary implementation, but any object with a
+    ``fetch_documents`` method works, which keeps the engine decoupled from a
+    specific backend and easy to test.
+    """
+
+    def fetch_documents(self) -> Iterable[Tuple[str, str]]:
+        ...
 
 
 @dataclass
@@ -104,9 +116,15 @@ class Answer:
 class ChatbotEngine:
     """Indexes reference files and answers questions from their content."""
 
-    def __init__(self, reference_dir: str | Path, min_score: float = 0.05) -> None:
+    def __init__(
+        self,
+        reference_dir: str | Path,
+        min_score: float = 0.05,
+        sources: Sequence["DocumentSource"] | None = None,
+    ) -> None:
         self.reference_dir = Path(reference_dir)
         self.min_score = min_score
+        self.sources = list(sources or [])
         self.documents: List[Document] = []
         self._idf: Dict[str, float] = {}
         self.reload()
@@ -119,17 +137,35 @@ class ChatbotEngine:
             for path in sorted(self.reference_dir.rglob("*")):
                 if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS:
                     self._index_file(path)
+        for source in self.sources:
+            self._index_source(source)
         self._compute_idf()
+
+    def _index_text(self, content: str, source: str) -> None:
+        for passage in split_into_passages(content):
+            doc = Document(text=passage, source=source)
+            if doc.term_freq:
+                self.documents.append(doc)
 
     def _index_file(self, path: Path) -> None:
         try:
             content = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             return
-        for passage in split_into_passages(content):
-            doc = Document(text=passage, source=path.name)
-            if doc.term_freq:
-                self.documents.append(doc)
+        self._index_text(content, path.name)
+
+    def _index_source(self, source: "DocumentSource") -> None:
+        """Index documents provided by an external source (e.g. SharePoint).
+
+        Failures are swallowed so a misconfigured or unreachable source never
+        takes the whole chatbot down; it simply contributes no documents.
+        """
+        try:
+            documents = source.fetch_documents()
+        except Exception:
+            return
+        for name, content in documents:
+            self._index_text(content, name)
 
     def _compute_idf(self) -> None:
         num_docs = len(self.documents)
