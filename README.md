@@ -78,7 +78,7 @@ to add HTTPS and a friendly URL.
 **Deploy to a hosting platform** (Render, Railway, Heroku, Azure App Service,
 Google Cloud Run, etc.):
 
-1. Push this repository to GitHub (already done for this PR).
+1. Push this repository to GitHub (or your git host of choice).
 2. Create a new **web service** on your platform of choice and point it at the
    repo. The bundled `Procfile`
    (`web: gunicorn app:app --bind 0.0.0.0:$PORT`) tells the platform how to
